@@ -8,68 +8,136 @@
 <script src="passwords.js"></script>
 <script src="config.js"></script>
 <script>
-const PAGE="view.html";
-if(PAGE_PASSWORDS[PAGE]){
-  const entry=prompt("Enter password for Attendance Viewer:");
-  if(entry!==PAGE_PASSWORDS[PAGE]){alert("Incorrect!");window.location.href="index.html";}
+const PAGE = "view.html";
+if (PAGE_PASSWORDS[PAGE]) {
+  const entry = prompt("Enter password for Attendance Viewer:");
+  if (entry !== PAGE_PASSWORDS[PAGE]) {
+    alert("Incorrect!");
+    window.location.href = "index.html";
+  }
 }
-async function fetchData(){
-  const resp=await fetch(WEBAPP_URL);
-  const data=await resp.json();
-  const table=document.getElementById("tableBody");
-  table.innerHTML="";
-  data.forEach(d=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${d.teacher}</td><td>${d.branch}</td><td>${d.date}</td><td>${d.time}</td>`;
+
+let allData = [];
+
+// ✅ Fetch data from the Google Apps Script WebApp
+async function fetchData() {
+  try {
+    const resp = await fetch(WEBAPP_URL);
+    const result = await resp.json();
+    allData = result.data || result; // Handle wrapped response
+    console.log("Sample data:", allData[0]); // Debug one record
+
+    // Sort newest first
+    allData.sort((a, b) => new Date(b["Date"] || b.date) - new Date(a["Date"] || a.date));
+
+    renderTable(allData);
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    alert("Unable to fetch attendance data.");
+  }
+}
+
+// ✅ Render data in the table with readable date/time
+function renderTable(data) {
+  const table = document.getElementById("tableBody");
+  table.innerHTML = "";
+
+  data.forEach(d => {
+    // Extract raw values
+    const rawDate = d["Date"] || d.date || "";
+    const rawTime = d["Time"] || d.time || "";
+
+    // Format date (e.g., 14 Oct 2025)
+    let dateStr = "-";
+    if (rawDate) {
+      const dateObj = new Date(rawDate);
+      if (!isNaN(dateObj)) {
+        dateStr = dateObj.toLocaleDateString("en-IN", {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+      }
+    }
+
+    // Format time (e.g., 4:00 PM)
+    let timeStr = "-";
+    if (rawTime) {
+      const timeObj = new Date(rawTime);
+      if (!isNaN(timeObj)) {
+        timeStr = timeObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+    }
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${d["Teacher"] || d.teacher || "-"}</td>
+      <td>${d["Branch"] || d.branch || "-"}</td>
+      <td>${dateStr}</td>
+      <td>${timeStr}</td>
+    `;
     table.appendChild(tr);
   });
 }
-</script>
-</head>
-<body onload="fetchData()">
-<div class="container">
-<div class="header"><div class="logo">📊</div><div><h1 class="title">View Attendance</h1><div class="small">Read-only view</div></div></div>
-<div class="card">
-<form id="filterForm" onsubmit="event.preventDefault();filterData();">
-  From: <input type="date" id="fromDate"/> To: <input type="date" id="toDate"/>
-  Teacher: <input type="text" id="teacherFilter" placeholder="Teacher"/>
-  <button>Filter</button>
-</form>
-<table>
-<thead><tr><th>Teacher</th><th>Branch</th><th>Date</th><th>Time</th></tr></thead>
-<tbody id="tableBody"></tbody>
-</table>
-</div>
-</div>
-<script>
-let allData=[];
-async function fetchData(){
-  const resp=await fetch(WEBAPP_URL);
-  allData=await resp.json();
-  renderTable(allData);
-}
-function renderTable(data){
-  const table=document.getElementById("tableBody");
-  table.innerHTML="";
-  data.forEach(d=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${d.teacher}</td><td>${d.branch}</td><td>${d.date}</td><td>${d.time}</td>`;
-    table.appendChild(tr);
+
+// ✅ Filter data by teacher and date range
+function filterData() {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  const teacher = document.getElementById("teacherFilter").value.toLowerCase();
+
+  const filtered = allData.filter(d => {
+    const date = d["Date"] || d.date || "";
+    const teacherName = (d["Teacher"] || d.teacher || "").toLowerCase();
+
+    let isValid = true;
+    if (from) isValid = isValid && date >= from;
+    if (to) isValid = isValid && date <= to;
+    if (teacher) isValid = isValid && teacherName.includes(teacher);
+    return isValid;
   });
-}
-function filterData(){
-  const from=document.getElementById("fromDate").value;
-  const to=document.getElementById("toDate").value;
-  const teacher=document.getElementById("teacherFilter").value.toLowerCase();
-  let filtered=allData.filter(d=>{
-    let valid=true;
-    if(from) valid=valid && (d.date>=from);
-    if(to) valid=valid && (d.date<=to);
-    if(teacher) valid=valid && d.teacher.toLowerCase().includes(teacher);
-    return valid;
-  });
+
   renderTable(filtered);
 }
 </script>
+</head>
+
+<body onload="fetchData()">
+<div class="container">
+  <div class="header">
+    <div class="logo">📊</div>
+    <div>
+      <h1 class="title">View Attendance</h1>
+      <div class="small">Read-only view</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="filterForm" onsubmit="event.preventDefault();filterData();">
+      <label>From:</label>
+      <input type="date" id="fromDate"/>
+      <label>To:</label>
+      <input type="date" id="toDate"/>
+      <label>Teacher:</label>
+      <input type="text" id="teacherFilter" placeholder="Teacher name"/>
+      <button type="submit">Filter</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Teacher</th>
+          <th>Branch</th>
+          <th>Date</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
 </body>
 </html>
