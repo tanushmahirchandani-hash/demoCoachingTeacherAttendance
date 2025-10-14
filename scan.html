@@ -18,7 +18,14 @@
       <div class="small">Branch: <span id="branchName2"></span></div>
     </div>
   </div>
-  <div id="reader" style="width:100%;"></div>
+
+  <div style="text-align:center; margin:20px;">
+    <button id="startBtn" style="padding:10px 20px; font-size:16px; cursor:pointer;">
+      🎥 Start Camera
+    </button>
+  </div>
+
+  <div id="reader" style="width:100%; display:none;"></div>
 </div>
 
 <script>
@@ -27,7 +34,6 @@ document.addEventListener("DOMContentLoaded", function() {
   const BRANCH = params.get("branch") || "UNKNOWN";
   const PAGE = "scan.html";
 
-  // Update branch names in header
   document.getElementById("branchName").innerText = BRANCH;
   document.getElementById("branchName2").innerText = BRANCH;
 
@@ -37,12 +43,15 @@ document.addEventListener("DOMContentLoaded", function() {
     if(entry !== PAGE_PASSWORDS[PAGE][BRANCH]){
       alert("Incorrect password!");
       window.location.href = "index.html";
-      return; // stop script
+      return;
     }
   }
 
-  // QR Code scan success callback
-  function onScanSuccess(decodedText, decodedResult){
+  const startBtn = document.getElementById("startBtn");
+  const readerDiv = document.getElementById("reader");
+  let html5Qrcode = null;
+
+  function onScanSuccess(decodedText) {
     const now = new Date();
     const data = {
       teacher: decodedText,
@@ -50,29 +59,48 @@ document.addEventListener("DOMContentLoaded", function() {
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString()
     };
+
     fetch(WEBAPP_URL, {
       method: "POST",
       body: JSON.stringify(data)
     })
     .then(r => r.text())
-    .then(t => alert("Attendance recorded for "+decodedText))
+    .then(() => alert("Attendance recorded for " + decodedText))
     .catch(err => console.error("Error posting attendance:", err));
   }
 
-  // Initialize QR code scanner
-  Html5Qrcode.getCameras().then(cameras => {
-    if(cameras && cameras.length){
-      const html5Qrcode = new Html5Qrcode("reader");
-      html5Qrcode.start(
-        cameras[0].id,
-        { fps: 10, qrbox: 250 },
-        onScanSuccess
-      ).catch(err => console.error("Failed to start scanner:", err));
-    } else {
-      alert("No cameras found on this device.");
-    }
-  }).catch(err => console.error("Camera access error:", err));
+  startBtn.addEventListener("click", () => {
+    startBtn.disabled = true;
+    startBtn.innerText = "Starting camera...";
+    readerDiv.style.display = "block";
 
+    Html5Qrcode.getCameras().then(cameras => {
+      if(cameras && cameras.length){
+        html5Qrcode = new Html5Qrcode("reader");
+        html5Qrcode.start(
+          cameras[0].id,
+          { fps: 10, qrbox: 250 },
+          onScanSuccess
+        ).then(() => {
+          startBtn.innerText = "Camera started ✅";
+        }).catch(err => {
+          console.error("Failed to start scanner:", err);
+          alert("Unable to start camera: " + err);
+          startBtn.disabled = false;
+          startBtn.innerText = "🎥 Start Camera";
+        });
+      } else {
+        alert("No cameras found on this device.");
+        startBtn.disabled = false;
+        startBtn.innerText = "🎥 Start Camera";
+      }
+    }).catch(err => {
+      console.error("Camera access error:", err);
+      alert("Camera access error: " + err);
+      startBtn.disabled = false;
+      startBtn.innerText = "🎥 Start Camera";
+    });
+  });
 });
 </script>
 </body>
