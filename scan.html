@@ -7,6 +7,9 @@
 <link rel="stylesheet" href="style.css">
 <script src="passwords.js"></script>
 <script src="config.js"></script>
+
+<!-- ✅ must come BEFORE your script that uses Html5Qrcode -->
+<script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
 <body>
 <div class="container">
@@ -18,15 +21,9 @@
     </div>
   </div>
 
-  <div style="text-align:center; margin:20px;">
-    <button id="startBtn" style="padding:10px 20px; font-size:16px;">🎥 Start Camera</button>
-  </div>
-
-  <div id="reader" style="width:100%; display:none;"></div>
+  <div id="reader" style="width:100%;"></div>
+  <button id="startBtn">Start Camera</button>
 </div>
-
-<!-- ✅ Load the QR library AFTER your HTML is ready -->
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -37,10 +34,9 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("branchName").innerText = BRANCH;
   document.getElementById("branchName2").innerText = BRANCH;
 
-  // Password check
-  if (PAGE_PASSWORDS[PAGE] && PAGE_PASSWORDS[PAGE][BRANCH]) {
+  if(PAGE_PASSWORDS[PAGE] && PAGE_PASSWORDS[PAGE][BRANCH]){
     const entry = prompt(`Enter password for ${BRANCH}:`);
-    if (entry !== PAGE_PASSWORDS[PAGE][BRANCH]) {
+    if(entry !== PAGE_PASSWORDS[PAGE][BRANCH]){
       alert("Incorrect password!");
       window.location.href = "index.html";
       return;
@@ -48,7 +44,32 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   const startBtn = document.getElementById("startBtn");
-  const readerDiv = document.getElementById("reader");
+  let html5Qrcode;
+
+  startBtn.addEventListener("click", async () => {
+    try {
+      if (!window.Html5Qrcode) {
+        alert("Camera library not loaded yet. Please refresh.");
+        return;
+      }
+
+      const cameras = await Html5Qrcode.getCameras();
+      if (cameras && cameras.length) {
+        html5Qrcode = new Html5Qrcode("reader");
+        await html5Qrcode.start(
+          cameras[0].id,
+          { fps: 10, qrbox: 250 },
+          onScanSuccess
+        );
+        startBtn.style.display = "none"; // hide button when camera starts
+      } else {
+        alert("No camera found!");
+      }
+    } catch (err) {
+      console.error("Camera start error:", err);
+      alert("Camera start error: " + err);
+    }
+  });
 
   function onScanSuccess(decodedText) {
     const now = new Date();
@@ -58,42 +79,14 @@ document.addEventListener("DOMContentLoaded", function() {
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString()
     };
-
     fetch(WEBAPP_URL, {
       method: "POST",
       body: JSON.stringify(data)
     })
     .then(r => r.text())
-    .then(() => alert("Attendance recorded for " + decodedText))
+    .then(t => alert("Attendance recorded for " + decodedText))
     .catch(err => console.error("Error posting attendance:", err));
   }
-
-  startBtn.addEventListener("click", async () => {
-    startBtn.disabled = true;
-    startBtn.innerText = "Starting camera...";
-    readerDiv.style.display = "block";
-
-    try {
-      const cameras = await Html5Qrcode.getCameras();
-      console.log("Available cameras:", cameras);
-      if (!cameras || cameras.length === 0) {
-        alert("No camera found!");
-        startBtn.disabled = false;
-        startBtn.innerText = "🎥 Start Camera";
-        return;
-      }
-
-      const html5Qrcode = new Html5Qrcode("reader");
-      await html5Qrcode.start(cameras[0].id, { fps: 10, qrbox: 250 }, onScanSuccess);
-      startBtn.innerText = "Camera started ✅";
-
-    } catch (err) {
-      console.error("Camera start error:", err);
-      alert("Camera start error: " + err.message);
-      startBtn.disabled = false;
-      startBtn.innerText = "🎥 Start Camera";
-    }
-  });
 });
 </script>
 </body>
