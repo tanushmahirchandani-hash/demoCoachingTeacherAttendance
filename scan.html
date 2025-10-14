@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Scan Attendance</title>
+<link rel="stylesheet" href="style.css">
+<script src="passwords.js"></script>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
+<script>
+const params=new URLSearchParams(location.search);
+const BRANCH=params.get("branch")||"UNKNOWN";
+const PAGE="scan.html";
+if(PAGE_PASSWORDS[PAGE]&&PAGE_PASSWORDS[PAGE][BRANCH]){
+  const entry=prompt(`Enter password for ${BRANCH}:`);
+  if(entry!==PAGE_PASSWORDS[PAGE][BRANCH]){alert("Incorrect!");window.location.href="index.html";}
+}
+</script>
+</head>
+<body>
+<div class="container">
+<div class="header"><div class="logo">📷</div><div><h1 class="title">Scan Attendance — <span id="branchName"></span></h1><div class="small">Branch: <span id="branchName2"></span></div></div></div>
+<div id="reader" style="width:100%;"></div>
+<script>
+document.getElementById("branchName").innerText=BRANCH;
+document.getElementById("branchName2").innerText=BRANCH;
+
+function onScanSuccess(decodedText,decodedResult){
+  const now=new Date();
+  const data={
+    teacher:decodedText,
+    branch:BRANCH,
+    date:now.toLocaleDateString(),
+    time:now.toLocaleTimeString()
+  };
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:JSON.stringify(data)
+  }).then(r=>r.text()).then(t=>alert("Attendance recorded for "+decodedText));
+}
+let html5Qrcode=new Html5Qrcode("reader");
+Html5Qrcode.getCameras().then(cameras=>{
+  if(cameras && cameras.length){html5Qrcode.start(cameras[0].id,{fps:10,qrbox:250},onScanSuccess);}
+}).catch(err=>console.error(err));
+</script>
+</div>
+</body>
+</html>

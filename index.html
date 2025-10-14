@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Attendance Portal — Home</title>
+<link rel="stylesheet" href="style.css">
+<script src="passwords.js"></script>
+<script src="config.js"></script>
+<script>
+const PAGE="index.html";
+if(PAGE_PASSWORDS[PAGE]){
+  const entry=prompt("Enter password to access Home:");
+  if(entry!==PAGE_PASSWORDS[PAGE]){alert("Incorrect!");window.location.href="index.html";}
+}
+</script>
+</head>
+<body>
+<div class="container">
+  <div class="header"><div class="logo">🏫</div><div><h1 class="title">Attendance Portal</h1><div class="small">Welcome! Choose your option.</div></div></div>
+  <div class="grid">
+    <div class="card-option" onclick="location.href='generator.html'"><div class="emoji">🧾</div><h3>Make QR</h3><p class="small">Generate teacher QR codes (Admin)</p></div>
+    <div class="card-option" onclick="location.href='view.html'"><div class="emoji">📊</div><h3>View Attendance</h3><p class="small">Check all attendance records (Read-only)</p></div>
+    <div class="card-option" onclick="location.href='scan_select.html'"><div class="emoji">📷</div><h3>Scan Attendance</h3><p class="small">For counselors — select branch</p></div>
+  </div>
+</div>
+</body>
+</html>

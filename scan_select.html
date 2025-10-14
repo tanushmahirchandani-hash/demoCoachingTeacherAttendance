@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Select Branch — Scan</title>
+<link rel="stylesheet" href="style.css">
+<script src="passwords.js"></script>
+<script src="config.js"></script>
+<script>
+const PAGE="scan_select.html";
+if(PAGE_PASSWORDS[PAGE]){
+  const entry=prompt("Enter password to access Branch Selector:");
+  if(entry!==PAGE_PASSWORDS[PAGE]){alert("Incorrect!");window.location.href="index.html";}
+}
+function go(branch){location.href=`scan.html?branch=${branch}`;}
+</script>
+</head>
+<body>
+<div class="container">
+<div class="header"><div class="logo">🏢</div><div><h1 class="title">Select Branch</h1><div class="small">Choose branch to scan attendance.</div></div></div>
+<div class="grid">
+  <div class="branch-card" onclick="go('SNGR')">SNGR</div>
+  <div class="branch-card" onclick="go('PN')">PN</div>
+  <div class="branch-card" onclick="go('JP')">JP</div>
+  <div class="branch-card" onclick="go('VN')">VN</div>
+  <div class="branch-card" onclick="go('GOPALPURA')">GOPALPURA</div>
+  <div class="branch-card" onclick="go('JHOTWARA')">JHOTWARA</div>
+  <div class="branch-card" onclick="go('RAJA-PARK')">RAJA-PARK</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>QR Generator</title>
+<link rel="stylesheet" href="style.css">
+<script src="passwords.js"></script>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+<script>
+const PAGE="generator.html";
+if(PAGE_PASSWORDS[PAGE]){
+  const entry=prompt("Enter password for QR Generator:");
+  if(entry!==PAGE_PASSWORDS[PAGE]){alert("Incorrect!");window.location.href="index.html";}
+}
+function generateQR(){
+  const teacher=document.getElementById("teacher").value.trim();
+  if(!teacher){alert("Enter teacher name/id");return;}
+  QRCode.toCanvas(document.getElementById("qrcode"),teacher,function(err){if(err)console.error(err);});
+}
+</script>
+</head>
+<body>
+<div class="container">
+<div class="header"><div class="logo">🧾</div><div><h1 class="title">QR Generator</h1><div class="small">Generate teacher QR code</div></div></div>
+<div class="card">
+  <input type="text" id="teacher" placeholder="Teacher Name/ID"/>
+  <button onclick="generateQR()">Generate QR</button>
+  <canvas id="qrcode" style="margin-top:20px;"></canvas>
+</div>
+</div>
+</body>
+</html>
