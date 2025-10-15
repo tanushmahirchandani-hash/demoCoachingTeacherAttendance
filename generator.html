@@ -14,21 +14,44 @@ if(PAGE_PASSWORDS[PAGE]){
   const entry=prompt("Enter password for QR Generator:");
   if(entry!==PAGE_PASSWORDS[PAGE]){alert("Incorrect!");window.location.href="index.html";}
 }
+
 function generateQR(){
   const teacher=document.getElementById("teacher").value.trim();
   if(!teacher){alert("Enter teacher name/id");return;}
-  QRCode.toCanvas(document.getElementById("qrcode"),teacher,function(err){if(err)console.error(err);});
+  
+  const canvas = document.getElementById("qrcode");
+  QRCode.toCanvas(canvas, teacher, function(err){
+    if(err){ console.error(err); return; }
+    document.getElementById("downloadBtn").style.display = "inline-block"; // show download button
+  });
+}
+
+function downloadQR(){
+  const canvas = document.getElementById("qrcode");
+  const teacher=document.getElementById("teacher").value.trim() || "qr_code";
+  const link = document.createElement("a");
+  link.download = teacher.replace(/\s+/g,'_') + "_QR.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
 }
 </script>
 </head>
 <body>
 <div class="container">
-<div class="header"><div class="logo">🧾</div><div><h1 class="title">QR Generator</h1><div class="small">Generate teacher QR code</div></div></div>
-<div class="card">
-  <input type="text" id="teacher" placeholder="Teacher Name/ID"/>
-  <button onclick="generateQR()">Generate QR</button>
-  <canvas id="qrcode" style="margin-top:20px;"></canvas>
-</div>
+  <div class="header">
+    <div class="logo">🧾</div>
+    <div>
+      <h1 class="title">QR Generator</h1>
+      <div class="small">Generate teacher QR code</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <input type="text" id="teacher" placeholder="Teacher Name/ID"/>
+    <button onclick="generateQR()">Generate QR</button>
+    <button id="downloadBtn" onclick="downloadQR()" style="display:none;">Download QR</button>
+    <canvas id="qrcode" style="margin-top:20px;"></canvas>
+  </div>
 </div>
 </body>
 </html>
